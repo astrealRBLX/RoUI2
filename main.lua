@@ -36,6 +36,7 @@ function AnimationControllerClass:LoadAnimation(animationName, toAnimateObj, ani
 	this.AnimatedInstance = toAnimateObj;
 	this.Instance = animationObject;
 	this.Tweens = {};
+	this.PlayingTweens = {};
 	
 	-- Sort keyframe folders
 	local keyframeFolders = {};
@@ -85,11 +86,20 @@ function AnimationClass:Play()
 	for property, tweens in pairs(self.Tweens) do
 		coroutine.wrap(function()
 			for _, tween in pairs(tweens) do
+				table.insert(self.PlayingTweens, tween);
 				tween:Play();
 				tween.Completed:Wait();
+				table.remove(self.PlayingTweens, table.find(self.PlayingTweens, tween));
 			end
 		end)();
 	end
+end
+
+function AnimationClass:Wait()
+	assert(#self.PlayingTweens > 0, "No animation is currently playing.");
+	repeat
+		game:GetService("RunService").RenderStepped:Wait();
+	until #self.PlayingTweens <= 0
 end
 
 return RoUI2;
